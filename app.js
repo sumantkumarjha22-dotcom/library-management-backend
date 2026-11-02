@@ -11,7 +11,12 @@
  
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://library-management-backend-do5u.onrender.com"],
+    origin: [
+      "http://localhost:5173",
+      "https://library-management-frontend-cyan-two.vercel.app",
+      "https://library-management-frontend-sumant9.vercel.app",
+      /\.vercel\.app$/
+    ],
     credentials: true, // only needed if you send cookies / auth headers with credentials
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
