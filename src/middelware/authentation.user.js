@@ -25,13 +25,13 @@ if (!token) {
 
    //console.log("decoded_token",decoded_token)
    if(decoded_token.isAdmin){
-    throw new ApiError(404,"you are not user")
+    throw new ApiError(401,"you are not user")
    }
 
     const user = await User.findById(decoded_token._id)
    //console.log(user)
 if (!user) {
-    throw new ApiError(401, "User not found");
+    throw new ApiError(404, "User not found");
 }
 
     req.user = user

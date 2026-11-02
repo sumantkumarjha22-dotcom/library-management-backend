@@ -14,81 +14,55 @@ const options = {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
 }
 const userregister = asynchandeler(async (req, res) => {
-  //console.log("Headers:", req.headers);
-  //console.log("in registr")
   try {
-   //console.log(req.body);
-   
-    const { email, fullname,password, number, username } = req.body;
+    const { email, fullname, password, number, username } = req.body;
 
-
-    //checks if all the fields is  filled up in front 
-
-
-    if ([email, password, email, username, number].some((filed) => filed.trim() === "")) {
-      throw new ApiError(404, "all filed reqired")
-      console.log("all fields requires")
-
+    if ([fullname, email, password, username, String(number || '')].some((field) => !field || String(field).trim() === '')) {
+      throw new ApiError(400, 'All fields are required');
     }
-    // check if user exists
 
+    const existeduser = await User.findOne({
+      $or: [{ email }, { username: (username || '').toLowerCase() }, { number }]
+    });
 
-    const existeduser = await User.findOne(
-
-      {
-        $or: [{ email }, { username }]
-      }
-    )
     if (existeduser) {
-     throw new ApiError(404,"user exist already")
-
+      if (existeduser.email === email) {
+        throw new ApiError(409, 'User with this email already exists');
+      }
+      if (existeduser.username === (username || '').toLowerCase()) {
+        throw new ApiError(409, 'User with this username already exists');
+      }
+      if (existeduser.number === number) {
+        throw new ApiError(409, 'User with this phone number already exists');
+      }
+      throw new ApiError(409, 'User already exists');
     }
 
+    const user = await User.create({
+      email,
+      password,
+      fullname,
+      number,
+      username: username.toLowerCase()
+    });
 
-    const user = await User.create(
-      {
-        email,
-        password,      
-        fullname,
-        number,
-        username: username.toLowerCase()
-
-      }
-    )
-
-
-    const create_user = await User.findById(user._id).select(
-      "-password -refresh_token"
-    )
+    const create_user = await User.findById(user._id).select('-password -refreshtoken');
 
     if (!create_user) {
-      throw new ApiError(202, "error in created_user")
-      console.log("somthing  went wrong");
+      throw new ApiError(500, 'Error creating user');
     }
 
-
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          {
-            create_user
-          },
-          "user regisred succesful"
-        )
+    return res.status(201).json(
+      new ApiResponse(
+        201,
+        { create_user },
+        'User registered successfully'
       )
-  }
-
-
-  catch (error) {
-
-    console.log("REGISTER ERROR:", error);
+    );
+  } catch (error) {
+    console.log('REGISTER ERROR:', error);
     throw error;
   }
-
-
 })
 const login_user = asynchandeler(async (req, res) => {
 
@@ -360,20 +334,19 @@ const EditEmail = asynchandeler(async (req, res) => {
   const { Email } = req.body
 
   if (!Email || Email.trim() === "") {
-    throw new ApiError(404, "enter you name")
+    throw new ApiError(400, "Enter your email")
   }
   const newemail = await User.findOne({
-    username: Email.trim()
+    email: Email.trim()
   });
   if (newemail) {
-    throw new ApiError(404, "email already exist enter a valid username  ")
-
+    throw new ApiError(409, "Email already exists")
   }
 
   try {
     const user = await User.findById(req.user._id);
     if (!user) {
-      throw new ApiError(404, "user not found");
+      throw new ApiError(404, "User not found");
     }
     user.email = Email.trim()
     await user.save({ validateBeforeSave: false })
@@ -407,7 +380,7 @@ const EditUsername = asynchandeler(async (req, res) => {
 
   const { Username } = req.body
   if (!Username || Username.trim() === "") {
-    throw new ApiError(404, "enter you username")
+    throw new ApiError(400, "Enter your username")
   }
   try {
 
@@ -415,7 +388,7 @@ const EditUsername = asynchandeler(async (req, res) => {
       username: Username.trim()
     });
     if (newusername) {
-      throw new ApiError(404, "username already exist enter a valid username  ")
+      throw new ApiError(409, "Username already exists")
 
     }
 
@@ -454,7 +427,7 @@ const ChangePassword = asynchandeler(async (req, res) => {
   const { oldpassword, newpassword, conformpassword } = req.body
 
   if (newpassword !== conformpassword) {
-    throw new ApiError(404, "")
+    throw new ApiError(400, "Passwords do not match")
   }
 
 
@@ -468,12 +441,12 @@ const ChangePassword = asynchandeler(async (req, res) => {
 
     const veryfypassword = await user.is_password_correct(oldpassword);
     if (!veryfypassword) {
-      throw new ApiError(404, "enter a valid password")
+      throw new ApiError(400, "Invalid current password")
 
     }
 
     user.password = newpassword
-    user.save({ validateBeforeSave: false })
+    await user.save({ validateBeforeSave: false })
 
     const editeduser = await User.findById(req.user._id).select("-password -refreshtoken")
 

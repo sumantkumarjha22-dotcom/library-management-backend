@@ -11,7 +11,7 @@
  
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://your-deployed-frontend.com"],
+    origin: ["http://localhost:5173", "https://library-management-backend-do5u.onrender.com"],
     credentials: true, // only needed if you send cookies / auth headers with credentials
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -47,9 +47,20 @@ app.use(
     app.use("/api/v1/users" ,airouter);
     app.use("/api/v1/users",allbookroute);
 
-    // STEP 5: Start Server
+    // STEP 5: Test Route
     app.get("/user", (req,res) => {
-
         res.send("hahaha")
     })
+
+    // STEP 6: Global Error Handler Middleware
+    app.use((err, req, res, next) => {
+        const statusCode = err.statusCode || 500;
+        return res.status(statusCode).json({
+            statusCode,
+            success: false,
+            message: err.message || "Internal Server Error",
+            errors: err.errors || []
+        });
+    });
+
     export { app }
