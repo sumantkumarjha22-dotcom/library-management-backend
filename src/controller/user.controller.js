@@ -14,16 +14,18 @@ const options = {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
 }
 const userregister = asynchandeler(async (req, res) => {
-  console.log("Headers:", req.headers);
+  //console.log("Headers:", req.headers);
+  //console.log("in registr")
   try {
-
-    const { email, password, number, username, Email } = req.body;
+   //console.log(req.body);
+   
+    const { email, fullname,password, number, username } = req.body;
 
 
     //checks if all the fields is  filled up in front 
 
 
-    if ([Email, password, email, username, number].some((filed) => filed.trim() === "")) {
+    if ([email, password, email, username, number].some((filed) => filed.trim() === "")) {
       throw new ApiError(404, "all filed reqired")
       console.log("all fields requires")
 
@@ -38,16 +40,16 @@ const userregister = asynchandeler(async (req, res) => {
       }
     )
     if (existeduser) {
-      console.log("user exist")
+     throw new ApiError(404,"user exist already")
 
     }
 
 
     const user = await User.create(
       {
-        Email,
-        password,
         email,
+        password,      
+        fullname,
         number,
         username: username.toLowerCase()
 
@@ -88,55 +90,89 @@ const userregister = asynchandeler(async (req, res) => {
 
 
 })
-
 const login_user = asynchandeler(async (req, res) => {
 
   try {
+
     const { username, email, password } = req.body;
+
+    // Check username or email
     if (!username && !email) {
-      throw new ApiError(400, "username or email is required");
+      throw new ApiError(
+        400,
+        "Username or email is required"
+      );
     }
 
-
+    // Find user
     const user = await User.findOne({
-      $or: [{ username }, { email }]
-    })
+      $or: [
+        { username },
+        { email }
+      ]
+    });
 
+    // Username or email incorrect
     if (!user) {
-      throw new ApiError(404, "user not find ")
+      throw new ApiError(
+        401,
+        "Incorrect username or email"
+      );
     }
 
-    const check_password = await user.is_password_correct(password);
+    // Check password
+    const check_password =
+      await user.is_password_correct(password);
 
+    // Password incorrect
     if (!check_password) {
-      throw new ApiError(404, "enter valid password")
+      throw new ApiError(
+        401,
+        "Incorrect password"
+      );
     }
 
+    // Create access token
+    const creat_accesstoken =
+      await user.creat_access_token();
 
+    // Create refresh token
+    const creat_refreshtoken =
+      await user.creat_refresh_token();
 
-    const creat_accesstoken = await user.creat_access_token()
-    const creat_refreshtoken = await user.creat_refresh_token()
-
-
+    // Save refresh token
     user.refreshtoken = creat_refreshtoken;
-    await user.save({ validateBeforeSave: false });
 
-    const loggeduser = await User.findById(user._id).select("-password -refreshtoken")
+    await user.save({
+      validateBeforeSave: false
+    });
+
+    // Remove password and refresh token
+    const loggeduser = await User.findById(user._id)
+      .select("-password -refreshtoken");
+
+    // Send response
     return res
       .status(200)
-      .cookie("accesstoken", creat_accesstoken, options)
-      .cookie("refreshtoken", creat_refreshtoken, options)
+      .cookie("accesstoken",creat_accesstoken,options)
+      .cookie("refreshtoken",creat_refreshtoken,options)
       .json(
         new ApiResponse(
-          200, { loggeduser }, "looged in successfull"
+          200,
+          { loggeduser },
+          "Logged in successfully"
         )
-      )
-  } catch (error) {
-    console.error("Login error:", error);
-    throw error; // let asynchandeler format and send it
-  }
-})
+      );
 
+  } catch (error) {
+
+    console.error("Login error:", error);
+
+    throw error;
+
+  }
+
+});
 
 const send_user_deatils = asynchandeler(async (req, res) => {
   const userdetails = req.user;
@@ -193,10 +229,6 @@ const user_profile = asynchandeler(async (req, res) => {
         "profile fetched succcesful"
       )
     )
-
-
-
-
 })
 
 
@@ -209,6 +241,7 @@ const giveusercollectrequest = asynchandeler(async (req, res) => {
     console.log("findcollectedbook", findcollectedbook
 
     )
+    
     if (findcollectedbook.length <= 0) {
       throw new ApiError(200, "you have no collected book")
     }
@@ -228,10 +261,11 @@ const giveusercollectrequest = asynchandeler(async (req, res) => {
 
   }
 
-
-
-
 })
+
+
+
+
 
 
 const CreatRefreshAccesstoke = asynchandeler(async (req, res) => {
@@ -277,6 +311,9 @@ const CreatRefreshAccesstoke = asynchandeler(async (req, res) => {
 
 })
 
+
+
+
 const EditName = asynchandeler(async (req, res) => {
   const { FullName } = req.body
   if (!FullName || FullName.trim() === "") {
@@ -312,7 +349,12 @@ const EditName = asynchandeler(async (req, res) => {
 
 
 
+
 })
+
+
+
+
 // changeing the mail of  user 
 const EditEmail = asynchandeler(async (req, res) => {
   const { Email } = req.body
@@ -352,8 +394,14 @@ const EditEmail = asynchandeler(async (req, res) => {
       );
   }
 
-
 })
+
+
+
+
+
+
+
 // changing the username of user
 const EditUsername = asynchandeler(async (req, res) => {
 
@@ -395,6 +443,12 @@ const EditUsername = asynchandeler(async (req, res) => {
   }
 
 })
+
+
+
+
+
+
 //chanbging the password of user
 const ChangePassword = asynchandeler(async (req, res) => {
   const { oldpassword, newpassword, conformpassword } = req.body
@@ -436,6 +490,11 @@ const ChangePassword = asynchandeler(async (req, res) => {
   }
 })
  
+
+
+
+
+
 
 const EditNumber = asynchandeler(async (req, res) => {
   

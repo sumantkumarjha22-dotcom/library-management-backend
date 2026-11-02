@@ -41,7 +41,7 @@ if (!user) {
 
 })
 
-const veryfiyadmine= asynchandeler (async( req,res, next)=>{
+const veryfiyadmine= asynchandeler (async( req, res, next)=>{
   
     // console.log( "in veryfiyadmine")
    //  console.log("cookies is ",req?.cookies)

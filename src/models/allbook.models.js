@@ -33,6 +33,12 @@ const allbookschem = Schema({
     coverimage:{
       type:String,
     
+    },
+    standard:{
+        type:String,
+        default:"general",
+        
+     
     }
 
 

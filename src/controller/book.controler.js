@@ -81,21 +81,30 @@ const searchbook = asynchandeler (async (req,res)=>{
      
    $or:[ { bookname:{
        $regex:query,
+       $options: "i" ,
        
      }},
      {authorname:{
        $regex:query,
+       $options: "i" ,
        
- 
-     }}
+     }},
+     {
+   bookid:{
+    $regex:query,
+    $options: "i" ,
+   }
+     }
+
    ]
    })
 
     
    console.log(search)
    if(search.length===0){
-    throw new ApiError(404,"no result found");
-   }
+   return new ApiResponse(404,[],"book not found")
+  }
+  console.log(search)
    
    
  res.status(200)
@@ -105,9 +114,9 @@ const searchbook = asynchandeler (async (req,res)=>{
  } catch (error) {
   console.log("error in search controller", error.message);
 
-  return res.status(500).json({
-    message: error.message
-  });
+  return res.status(500).json(
+   new ApiResponse(404,[],"book not found")
+  );
 }
  
 

@@ -34,10 +34,12 @@ const importBooks = async (req, res) => {
                     bookid: String(books[i].id),
                     bookname: books[i].title,
                     authorname: books[i].authors[0]?.name || "Unknown",
-                    subject: books[i].subjects[0] || "General",
+                    standard: books[i].subjects[0] || "General",
                     totalcount: 5,
                     availablebook: 5,
                     coverimage: books[i].formats?.["image/jpeg"] || "",
+
+
                 });
  
                  allbooks.push(allbook)
@@ -69,6 +71,7 @@ const importBooks = async (req, res) => {
 
     
 };
+
 const AllBook= asynchandeler(async (req,res)=>{
 
       try {
